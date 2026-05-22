@@ -7,7 +7,7 @@ simple, text-only weather in Node.js.
 ## Requirements
 
 - Node.js 18+
-
+- npm
 ## Install (local)
 
 ```bash
