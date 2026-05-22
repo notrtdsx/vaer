@@ -232,12 +232,31 @@ async function fetchSunrise(lat, lon, date) {
   return parseSunrise(data);
 }
 
-function formatTimeLocal(value) {
+function formatTime(value, useUtc) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--:--";
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const hours = useUtc ? date.getUTCHours() : date.getHours();
+  const minutes = useUtc ? date.getUTCMinutes() : date.getMinutes();
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function dateKeyFromDate(date, useUtc) {
+  const year = useUtc ? date.getUTCFullYear() : date.getFullYear();
+  const month = useUtc ? date.getUTCMonth() + 1 : date.getMonth() + 1;
+  const day = useUtc ? date.getUTCDate() : date.getDate();
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function dateKeyFromIso(value, useUtc) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return dateKeyFromDate(date, useUtc);
+}
+
+function hourFromIso(value, useUtc) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return -1;
+  return useUtc ? date.getUTCHours() : date.getHours();
 }
 
 function formatTemperature(value) {
@@ -284,7 +303,7 @@ function printForecastEntries(entries, limit, cfg) {
   for (const entry of entries) {
     if (limit > 0 && count >= limit) break;
     const lines = [];
-    lines.push(`${formatTimeLocal(entry.time_rfc3339)}  ${formatTemperature(entry.air_temperature)}`);
+    lines.push(`${formatTime(entry.time_rfc3339, cfg.use_utc)}  ${formatTemperature(entry.air_temperature)}`);
     if (entry.symbol_code) {
       lines.push(`summary: ${entry.symbol_code}`);
     }
@@ -311,14 +330,22 @@ function printForecastEntries(entries, limit, cfg) {
   }
 }
 
-function todayDateUtc() {
-  const now = new Date();
-  return now.toISOString().slice(0, 10);
+function filterForecastByDate(entries, date, useUtc) {
+  return entries.filter((entry) => dateKeyFromIso(entry.time_rfc3339, useUtc) === date);
 }
 
-function tomorrowDateUtc() {
-  const now = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  return now.toISOString().slice(0, 10);
+function todayDate(useUtc) {
+  return dateKeyFromDate(new Date(), useUtc);
+}
+
+function tomorrowDate(useUtc) {
+  const next = new Date();
+  if (useUtc) {
+    next.setUTCDate(next.getUTCDate() + 1);
+  } else {
+    next.setDate(next.getDate() + 1);
+  }
+  return dateKeyFromDate(next, useUtc);
 }
 
 function extractHour(value, fallback) {
@@ -450,10 +477,10 @@ async function main() {
           return;
         }
 
-        const targetDate = cmd === "today" ? todayDateUtc() : tomorrowDateUtc();
+        const targetDate = cmd === "today" ? todayDate(cfg.use_utc) : tomorrowDate(cfg.use_utc);
         const filtered = forecast.filter((entry) => {
-          const date = entry.time_rfc3339.slice(0, 10);
-          const entryHour = Number.parseInt(entry.time_rfc3339.slice(11, 13), 10);
+          const date = dateKeyFromIso(entry.time_rfc3339, cfg.use_utc);
+          const entryHour = hourFromIso(entry.time_rfc3339, cfg.use_utc);
           return date === targetDate && entryHour === hour;
         });
 
@@ -462,15 +489,28 @@ async function main() {
       }
 
       console.log(`Getting ${cmd === "today" ? "today's" : "tomorrow's"} weather for ${geo.display_name}...`);
-      const date = cmd === "today" ? todayDateUtc() : tomorrowDateUtc();
+      const date = cmd === "today" ? todayDate(cfg.use_utc) : tomorrowDate(cfg.use_utc);
       const sunrise = await fetchSunrise(geo.lat, geo.lon, date);
       if (!sunrise || !sunrise.sunrise_time || !sunrise.sunset_time) {
         console.log("No sunrise data available.");
         return;
       }
 
-      console.log(`Sunrise: ${formatTimeLocal(sunrise.sunrise_time)}`);
-      console.log(`Sunset:  ${formatTimeLocal(sunrise.sunset_time)}`);
+      const forecast = await fetchForecast(geo.lat, geo.lon);
+      if (!forecast) {
+        console.log("No weather data available.");
+        return;
+      }
+
+      console.log(`Sunrise: ${formatTime(sunrise.sunrise_time, cfg.use_utc)}`);
+      console.log(`Sunset:  ${formatTime(sunrise.sunset_time, cfg.use_utc)}`);
+      console.log("");
+      const filtered = filterForecastByDate(forecast, date, cfg.use_utc);
+      if (filtered.length === 0) {
+        console.log("No forecast entries available for that date.");
+        return;
+      }
+      printForecastEntries(filtered, 8, cfg);
       return;
     }
 
