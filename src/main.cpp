@@ -455,114 +455,20 @@ std::string ClothingAdvice(double temp, double wind, double precip, double humid
   return out.str();
 }
 
-std::vector<std::vector<std::string>> BuildForecastRows(
-    const std::vector<ForecastEntry>& entries,
-    int limit,
-    const Config& cfg) {
-  std::vector<std::vector<std::string>> rows;
+void PrintForecastEntries(const std::vector<ForecastEntry>& entries, int limit) {
   int count = 0;
   for (const auto& entry : entries) {
     if (limit > 0 && count >= limit) {
       break;
     }
-    std::vector<std::string> row;
-    row.push_back(FormatTimeLocal(entry.time_rfc3339));
-    row.push_back(entry.symbol_code);
-    row.push_back(FormatTemperature(entry.air_temperature));
-    {
-      std::ostringstream out;
-      out << std::fixed << std::setprecision(1) << entry.wind_speed << " m/s";
-      row.push_back(out.str());
-    }
-    {
-      std::ostringstream out;
-      out << std::fixed << std::setprecision(1) << entry.precip << " mm";
-      row.push_back(out.str());
-    }
-    if (cfg.show_cloud) {
-      std::ostringstream out;
-      out << std::fixed << std::setprecision(1) << entry.cloud_area << "%";
-      row.push_back(out.str());
-    }
-    if (cfg.show_humidity) {
-      std::ostringstream out;
-      out << std::fixed << std::setprecision(1) << entry.humidity << "%";
-      row.push_back(out.str());
-    }
-    if (cfg.show_dewpoint) {
-      row.push_back(FormatTemperature(entry.dew_point));
-    }
-    if (cfg.show_beaufort) {
-      row.push_back(BeaufortDescription(entry.wind_speed));
-    }
-    if (cfg.show_uv) {
-      row.push_back(UVIndexLabel(entry.uv_index));
-    }
-    rows.push_back(row);
+    std::ostringstream line;
+    line << FormatTimeLocal(entry.time_rfc3339) << " "
+         << FormatTemperature(entry.air_temperature) << " "
+         << std::fixed << std::setprecision(1) << entry.wind_speed << "m/s "
+         << std::fixed << std::setprecision(1) << entry.precip << "mm";
+    std::cout << line.str() << "\n";
     ++count;
   }
-  return rows;
-}
-
-std::vector<std::string> BuildForecastHeader(const Config& cfg) {
-  std::vector<std::string> header = {"Time", "Summary", "Temp", "Wind", "Precip"};
-  if (cfg.show_cloud) {
-    header.push_back("Cloud");
-  }
-  if (cfg.show_humidity) {
-    header.push_back("Humidity");
-  }
-  if (cfg.show_dewpoint) {
-    header.push_back("Dew Point");
-  }
-  if (cfg.show_beaufort) {
-    header.push_back("Beaufort");
-  }
-  if (cfg.show_uv) {
-    header.push_back("UV Index");
-  }
-  return header;
-}
-
-void PrintTable(const std::vector<std::string>& header,
-                const std::vector<std::vector<std::string>>& rows) {
-  if (header.empty()) {
-    return;
-  }
-  std::vector<size_t> widths(header.size(), 0);
-  for (size_t i = 0; i < header.size(); ++i) {
-    widths[i] = std::max(widths[i], header[i].size());
-  }
-  for (const auto& row : rows) {
-    for (size_t i = 0; i < row.size() && i < widths.size(); ++i) {
-      widths[i] = std::max(widths[i], row[i].size());
-    }
-  }
-
-  auto print_separator = [&]() {
-    std::cout << "+";
-    for (size_t i = 0; i < widths.size(); ++i) {
-      std::cout << std::string(widths[i] + 2, '-') << "+";
-    }
-    std::cout << "\n";
-  };
-
-  auto print_row = [&](const std::vector<std::string>& row) {
-    std::cout << "|";
-    for (size_t i = 0; i < widths.size(); ++i) {
-      std::string cell = i < row.size() ? row[i] : "";
-      std::cout << " " << std::left << std::setw(static_cast<int>(widths[i])) << cell << " |";
-    }
-    std::cout << "\n";
-  };
-
-  print_separator();
-  print_row(header);
-  print_separator();
-  for (const auto& row : rows) {
-    print_row(row);
-  }
-  print_separator();
 }
 
 std::string TodayDateUtc() {
@@ -748,9 +654,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        auto header = BuildForecastHeader(cfg);
-        auto rows = BuildForecastRows(filtered, 1, cfg);
-        PrintTable(header, rows);
+        PrintForecastEntries(filtered, 1);
         return 0;
       }
 
@@ -783,9 +687,7 @@ int main(int argc, char** argv) {
         return 0;
       }
 
-      auto header = BuildForecastHeader(cfg);
-      auto rows = BuildForecastRows(forecast.value(), limit, cfg);
-      PrintTable(header, rows);
+      PrintForecastEntries(forecast.value(), limit);
       return 0;
     }
   }
