@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"vaer/internal/clothing"
-	"vaer/internal/config"
-	"vaer/pkg/met"
-	"vaer/pkg/nominatim"
+	"github.com/notrtdsx/vaer/internal/clothing"
+	"github.com/notrtdsx/vaer/internal/config"
+	"github.com/notrtdsx/vaer/pkg/met"
+	"github.com/notrtdsx/vaer/pkg/nominatim"
 
 	"github.com/spf13/cobra"
 )
