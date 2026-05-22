@@ -2,74 +2,38 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"strconv"
-	"vaer/internal/config"
-	"vaer/internal/table"
-	"vaer/pkg/met"
-	"vaer/pkg/nominatim"
+	"github.com/notrtdsx/vaer/internal/config"
 
 	"github.com/spf13/cobra"
 )
 
-var forecastCmd = &cobra.Command{
-	Use:   "forecast [location]",
-	Short: "Get the weather forecast for a location",
-	Args:  cobra.MaximumNArgs(1),
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "View current configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		var location string
-		if len(args) > 0 {
-			location = args[0]
-		} else {
-			cfg, err := config.Load()
-			if err != nil {
-				log.Fatal(err)
-			}
-			if cfg.Location.Name != "" {
-				location = cfg.Location.Name
-			} else {
-				fmt.Println("Please specify a location or set a default in your config file.")
-				return
-			}
-		}
-
-		nominatimClient := nominatim.New()
-		locations, err := nominatimClient.Search(location)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if len(locations) == 0 {
-			fmt.Println("Location not found.")
-			return
-		}
-
-		lat, err := strconv.ParseFloat(locations[0].Lat, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-		lon, err := strconv.ParseFloat(locations[0].Lon, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("Getting weather forecast for %s (%.4f, %.4f)...\n", locations[0].DisplayName, lat, lon)
-
-		metClient := met.New()
-		forecast, err := metClient.GetLocationForecast(lat, lon)
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		cfg, err := config.Load()
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error loading config:", err)
+			return
 		}
-
-		table.RenderForecast(forecast, 24, cfg.ShowCloud, cfg.ShowHumidity, cfg.ShowDewpoint, cfg.ShowBeaufort, cfg.ShowUV)
+		fmt.Printf("use_utc: %v\n", cfg.UseUTC)
+		fmt.Printf("show_uv: %v\n", cfg.ShowUV)
+		fmt.Printf("show_beaufort: %v\n", cfg.ShowBeaufort)
+		fmt.Printf("show_dewpoint: %v\n", cfg.ShowDewpoint)
+		fmt.Printf("show_humidity: %v\n", cfg.ShowHumidity)
+		fmt.Printf("show_cloud: %v\n", cfg.ShowCloud)
+		fmt.Printf("show_sun_protection: %v\n", cfg.ShowSunProtection)
+		fmt.Printf("show_wear: %v\n", cfg.ShowWear)
+		fmt.Printf("skin_type: %d\n", cfg.SkinType)
+		fmt.Printf("temperature_format: %s\n", cfg.TemperatureFormat)
+		if cfg.Location.Name != "" {
+			fmt.Printf("location.name: %s\n", cfg.Location.Name)
+			fmt.Printf("location.longitude: %f\n", cfg.Location.Longitude)
+			fmt.Printf("location.latitude: %f\n", cfg.Location.Latitude)
+		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(forecastCmd)
+	rootCmd.AddCommand(configCmd)
 }
