@@ -2,6 +2,8 @@
 
 simple, text-only weather in Node.js.
 
+> *Vær* is the Norwegian word for weather, used in everyday speech to describe the conditions outside: temperature, wind, clouds, and precipitation.
+
 ## Requirements
 
 - Node.js 18+
@@ -42,7 +44,7 @@ beaufort: 4.5 m/s
 
 ## Configuration
 
-Config file: `src/index.js`.
+Config: `src/index.js`.
 
 Example:
 
