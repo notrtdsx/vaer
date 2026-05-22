@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"vaer/internal/config"
+	"github.com/notrtdsx/vaer/internal/config"
 
 	"github.com/spf13/cobra"
 )
