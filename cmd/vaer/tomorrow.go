@@ -5,9 +5,10 @@ import (
 	"log"
 	"strconv"
 	"time"
-	"vaer/internal/config"
-	"vaer/pkg/met"
-	"vaer/pkg/nominatim"
+	"github.com/notrtdsx/vaer/internal/config"
+	"github.com/notrtdsx/vaer/internal/table"
+	"github.com/notrtdsx/vaer/pkg/met"
+	"github.com/notrtdsx/vaer/pkg/nominatim"
 
 	"github.com/spf13/cobra"
 )
