@@ -11,6 +11,7 @@ simple, text-only weather in Node.js.
 ```bash
 npm install -g .
 ```
+- Note, do not delete the vaer folder. if it gets deleted, vaer doesnt work.
 
 ## Usage
 
@@ -41,7 +42,7 @@ beaufort: 4.5 m/s
 
 ## Configuration
 
-Config file: `$XDG_CONFIG_HOME/vaer/vaer.toml` (or `~/.config/vaer/vaer.toml`).
+Config file: `src/index.js`.
 
 Example:
 
