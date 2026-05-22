@@ -1,4 +1,4 @@
-module vaer
+module github.com/notrtdsx/vaer
 
 go 1.23.0
 
