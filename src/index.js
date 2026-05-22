@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const USER_AGENT = "vaer/0.1";
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const GEOCODING_URL = "https://photon.komoot.io/api";
 const FORECAST_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 const SUNRISE_URL = "https://api.met.no/weatherapi/sunrise/3.0/sun";
 
@@ -166,16 +166,22 @@ async function httpGet(url) {
 }
 
 async function lookupLocation(query) {
-  const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1`;
+  const url = `${GEOCODING_URL}?q=${encodeURIComponent(query)}&limit=1`;
   const body = await httpGet(url);
   if (!body) return null;
   const data = JSON.parse(body);
-  if (!Array.isArray(data) || data.length === 0) return null;
-  const first = data[0];
+  const features = data?.features;
+  if (!Array.isArray(features) || features.length === 0) return null;
+  const first = features[0];
+  const props = first?.properties || {};
+  const parts = [props.name, props.state, props.country].filter(Boolean);
+  const coords = first?.geometry?.coordinates;
+  const lon = Array.isArray(coords) ? Number.parseFloat(coords[0]) : NaN;
+  const lat = Array.isArray(coords) ? Number.parseFloat(coords[1]) : NaN;
   return {
-    display_name: first.display_name || "",
-    lat: Number.parseFloat(first.lat || "0"),
-    lon: Number.parseFloat(first.lon || "0")
+    display_name: parts.join(", "),
+    lat: Number.isNaN(lat) ? 0 : lat,
+    lon: Number.isNaN(lon) ? 0 : lon
   };
 }
 
