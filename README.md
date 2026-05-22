@@ -1,6 +1,6 @@
 # vaer
 
-Text-only weather CLI in Node.js.
+simple, text-only weather in Node.js.
 
 ## Requirements
 
@@ -9,8 +9,7 @@ Text-only weather CLI in Node.js.
 ## Install (local)
 
 ```bash
-npm install
-npm link
+npm install -g .
 ```
 
 ## Usage
