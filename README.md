@@ -24,7 +24,7 @@ If you run it as root, it installs to `/usr/local/bin`. Otherwise it installs to
 
 ```bash
 makepkg -f
-sudo pacman -U vaer2-*.pkg.tar.*
+sudo pacman -U vaer-*.pkg.tar.*
 ```
 
 ## Static binary notes
