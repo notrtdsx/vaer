@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"vaer/pkg/met"
+	"github.com/notrtdsx/vaer/internal/beaufort"
+	"github.com/notrtdsx/vaer/internal/uv"
+	"github.com/notrtdsx/vaer/pkg/met"
 
 	"github.com/olekukonko/tablewriter"
 )
