@@ -1,6 +1,6 @@
 # vaer
 
-simple, text-only weather in Node.js.
+simple, text-only weather in Node.js. inspired by [Lyn](https://git.sr.ht/~timharek/lyn).
 
 > *Vær* is the Norwegian word for weather, used in everyday speech to describe the conditions outside: temperature, wind, clouds, and precipitation.
 
