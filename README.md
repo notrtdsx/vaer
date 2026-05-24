@@ -23,7 +23,6 @@ vaer forecast [location] [--limit N]
 vaer today [location] [--hour H]
 vaer tomorrow [location] [--hour H]
 vaer wear [location]
-vaer config
 ```
 
 ## Output format
@@ -42,23 +41,3 @@ uv: Low
 beaufort: 4.5 m/s
 ```
 
-## Configuration
-
-Config: `src/index.js`.
-
-Example:
-
-```toml
-use_utc = false
-show_uv = true
-show_beaufort = true
-show_dewpoint = true
-show_humidity = true
-show_cloud = true
-temperature_format = "celsius"
-
-[location]
-name = "Oslo, Norway"
-longitude = 10.7522
-latitude = 59.9139
-```
