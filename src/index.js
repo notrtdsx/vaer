@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-import fs from "node:fs";
-import path from "node:path";
-
 const USER_AGENT = "vaer/0.1";
 const GEOCODING_URL = "https://photon.komoot.io/api";
 const FORECAST_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
@@ -42,115 +39,6 @@ function parseIntValue(value) {
 function parseFloatValue(value) {
   const parsed = Number.parseFloat(trim(value));
   return Number.isNaN(parsed) ? undefined : parsed;
-}
-
-function getConfigPath() {
-  const xdg = process.env.XDG_CONFIG_HOME;
-  if (xdg && xdg.length > 0) {
-    return path.join(xdg, "vaer", "vaer.toml");
-  }
-  const home = process.env.HOME;
-  if (home && home.length > 0) {
-    return path.join(home, ".config", "vaer", "vaer.toml");
-  }
-  return "vaer.toml";
-}
-
-function loadConfig() {
-  const cfg = {
-    use_utc: false,
-    show_uv: false,
-    show_beaufort: true,
-    show_dewpoint: false,
-    show_humidity: true,
-    show_cloud: false,
-    show_sun_protection: false,
-    show_wear: false,
-    skin_type: 0,
-    temperature_format: "celsius",
-    location: {
-      name: "",
-      longitude: 0.0,
-      latitude: 0.0,
-      has_coords: false
-    }
-  };
-
-  const configPath = getConfigPath();
-  if (!fs.existsSync(configPath)) {
-    return cfg;
-  }
-
-  const content = fs.readFileSync(configPath, "utf8");
-  const lines = content.split(/\r?\n/);
-  let section = "";
-
-  for (const raw of lines) {
-    const hashIndex = raw.indexOf("#");
-    const line = trim(hashIndex >= 0 ? raw.slice(0, hashIndex) : raw);
-    if (!line) continue;
-
-    if (line.startsWith("[") && line.endsWith("]")) {
-      section = toLower(trim(line.slice(1, -1)));
-      continue;
-    }
-
-    const eq = line.indexOf("=");
-    if (eq < 0) continue;
-    const key = toLower(trim(line.slice(0, eq)));
-    const value = trim(line.slice(eq + 1));
-
-    if (!section) {
-      if (key === "use_utc") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.use_utc = parsed;
-      } else if (key === "show_uv") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_uv = parsed;
-      } else if (key === "show_beaufort") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_beaufort = parsed;
-      } else if (key === "show_dewpoint") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_dewpoint = parsed;
-      } else if (key === "show_humidity") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_humidity = parsed;
-      } else if (key === "show_cloud") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_cloud = parsed;
-      } else if (key === "show_sun_protection") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_sun_protection = parsed;
-      } else if (key === "show_wear") {
-        const parsed = parseBool(value);
-        if (parsed !== undefined) cfg.show_wear = parsed;
-      } else if (key === "skin_type") {
-        const parsed = parseIntValue(value);
-        if (parsed !== undefined) cfg.skin_type = parsed;
-      } else if (key === "temperature_format") {
-        cfg.temperature_format = toLower(stripQuotes(value));
-      }
-    } else if (section === "location") {
-      if (key === "name") {
-        cfg.location.name = stripQuotes(value);
-      } else if (key === "longitude") {
-        const parsed = parseFloatValue(value);
-        if (parsed !== undefined) {
-          cfg.location.longitude = parsed;
-          cfg.location.has_coords = true;
-        }
-      } else if (key === "latitude") {
-        const parsed = parseFloatValue(value);
-        if (parsed !== undefined) {
-          cfg.location.latitude = parsed;
-          cfg.location.has_coords = true;
-        }
-      }
-    }
-  }
-
-  return cfg;
 }
 
 async function httpGet(url) {
@@ -298,30 +186,30 @@ function clothingAdvice(temp, wind, precip, humidity, uv) {
   return advice;
 }
 
-function printForecastEntries(entries, limit, cfg) {
+function printForecastEntries(entries, limit) {
   let count = 0;
   for (const entry of entries) {
     if (limit > 0 && count >= limit) break;
     const lines = [];
-    lines.push(`${formatTime(entry.time_rfc3339, cfg.use_utc)}  ${formatTemperature(entry.air_temperature)}`);
+    lines.push(`${formatTime(entry.time_rfc3339, USE_UTC)}  ${formatTemperature(entry.air_temperature)}`);
     if (entry.symbol_code) {
       lines.push(`summary: ${entry.symbol_code}`);
     }
     lines.push(`wind: ${entry.wind_speed.toFixed(1)} m/s`);
     lines.push(`precip: ${entry.precip.toFixed(1)} mm`);
-    if (cfg.show_humidity) {
+    if (SHOW_HUMIDITY) {
       lines.push(`humidity: ${entry.humidity.toFixed(1)}%`);
     }
-    if (cfg.show_cloud) {
+    if (SHOW_CLOUD) {
       lines.push(`cloud: ${entry.cloud_area.toFixed(1)}%`);
     }
-    if (cfg.show_dewpoint) {
+    if (SHOW_DEWPOINT) {
       lines.push(`dew point: ${formatTemperature(entry.dew_point)}`);
     }
-    if (cfg.show_uv) {
+    if (SHOW_UV) {
       lines.push(`uv: ${uvIndexLabel(entry.uv_index)}`);
     }
-    if (cfg.show_beaufort) {
+    if (SHOW_BEAUFORT) {
       lines.push(`beaufort: ${entry.wind_speed.toFixed(1)} m/s`);
     }
     console.log(lines.join("\n"));
@@ -400,12 +288,10 @@ function printUsage() {
   console.log("  vaer today [location] [--hour H]");
   console.log("  vaer tomorrow [location] [--hour H]");
   console.log("  vaer wear [location]");
-  console.log("  vaer config");
 }
 
-function resolveLocation(cfg, args) {
+function resolveLocation(args) {
   if (args.length > 0) return args[0];
-  if (cfg.location.name) return cfg.location.name;
   return null;
 }
 
@@ -416,32 +302,12 @@ async function main() {
     return;
   }
 
-  const cfg = loadConfig();
   const cmd = toLower(args.command);
 
-  if (cmd === "config") {
-    console.log(`use_utc: ${cfg.use_utc}`);
-    console.log(`show_uv: ${cfg.show_uv}`);
-    console.log(`show_beaufort: ${cfg.show_beaufort}`);
-    console.log(`show_dewpoint: ${cfg.show_dewpoint}`);
-    console.log(`show_humidity: ${cfg.show_humidity}`);
-    console.log(`show_cloud: ${cfg.show_cloud}`);
-    console.log(`show_sun_protection: ${cfg.show_sun_protection}`);
-    console.log(`show_wear: ${cfg.show_wear}`);
-    console.log(`skin_type: ${cfg.skin_type}`);
-    console.log(`temperature_format: ${cfg.temperature_format}`);
-    if (cfg.location.name) {
-      console.log(`location.name: ${cfg.location.name}`);
-      console.log(`location.longitude: ${cfg.location.longitude}`);
-      console.log(`location.latitude: ${cfg.location.latitude}`);
-    }
-    return;
-  }
-
   if (["now", "forecast", "today", "tomorrow", "wear"].includes(cmd)) {
-    const location = resolveLocation(cfg, args.positionals);
+    const location = resolveLocation(args.positionals);
     if (!location) {
-      console.log("Please specify a location or set a default in your config file.");
+      console.log("Please specify a location.");
       return;
     }
 
@@ -477,19 +343,19 @@ async function main() {
           return;
         }
 
-        const targetDate = cmd === "today" ? todayDate(cfg.use_utc) : tomorrowDate(cfg.use_utc);
+        const targetDate = cmd === "today" ? todayDate(USE_UTC) : tomorrowDate(USE_UTC);
         const filtered = forecast.filter((entry) => {
-          const date = dateKeyFromIso(entry.time_rfc3339, cfg.use_utc);
-          const entryHour = hourFromIso(entry.time_rfc3339, cfg.use_utc);
+          const date = dateKeyFromIso(entry.time_rfc3339, USE_UTC);
+          const entryHour = hourFromIso(entry.time_rfc3339, USE_UTC);
           return date === targetDate && entryHour === hour;
         });
 
-        printForecastEntries(filtered, 1, cfg);
+        printForecastEntries(filtered, 1);
         return;
       }
 
       console.log(`Getting ${cmd === "today" ? "today's" : "tomorrow's"} weather for ${geo.display_name}...`);
-      const date = cmd === "today" ? todayDate(cfg.use_utc) : tomorrowDate(cfg.use_utc);
+      const date = cmd === "today" ? todayDate(USE_UTC) : tomorrowDate(USE_UTC);
       const sunrise = await fetchSunrise(geo.lat, geo.lon, date);
       if (!sunrise || !sunrise.sunrise_time || !sunrise.sunset_time) {
         console.log("No sunrise data available.");
@@ -502,15 +368,15 @@ async function main() {
         return;
       }
 
-      console.log(`Sunrise: ${formatTime(sunrise.sunrise_time, cfg.use_utc)}`);
-      console.log(`Sunset:  ${formatTime(sunrise.sunset_time, cfg.use_utc)}`);
+      console.log(`Sunrise: ${formatTime(sunrise.sunrise_time, USE_UTC)}`);
+      console.log(`Sunset:  ${formatTime(sunrise.sunset_time, USE_UTC)}`);
       console.log("");
-      const filtered = filterForecastByDate(forecast, date, cfg.use_utc);
+      const filtered = filterForecastByDate(forecast, date, USE_UTC);
       if (filtered.length === 0) {
         console.log("No forecast entries available for that date.");
         return;
       }
-      printForecastEntries(filtered, 8, cfg);
+      printForecastEntries(filtered, 8);
       return;
     }
 
@@ -527,7 +393,7 @@ async function main() {
         return;
       }
 
-      printForecastEntries(forecast, limit, cfg);
+      printForecastEntries(forecast, limit);
       return;
     }
   }
