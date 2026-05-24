@@ -6,9 +6,10 @@ simple, text-only weather in Node.js. inspired by [Lyn](https://git.sr.ht/~timha
 
 ## Requirements
 
-- Node.js 18+
-- npm
-## Install (local)
+- Node.js 24.16.0
+- npm (for installing globally)
+
+## Install
 
 ```bash
 npm install -g .
@@ -25,19 +26,22 @@ vaer tomorrow [location] [--hour H]
 vaer wear [location]
 ```
 
-## Output format
-
-Forecast output is text-only:
+## Example output
 
 ```
-12:00  12.3C
-summary: clearsky_day
+12:00  12.3°C
+weather: clearsky_day
 wind: 4.5 m/s
-precip: 0.0 mm
-humidity: 54.0%
-cloud: 12.0%
-dew point: 8.1C
-uv: Low
-beaufort: 4.5 m/s
+precip: 0.00 mm
+humidity: 54%
+clouds: 12%
+dew point: 8.1°C
+UV: low (0.0)
 ```
 
+The `wear` command prints short clothing suggestions based on temperature, wind, precipitation and UV.
+
+## Notes
+
+- The CLI entry is `vaer` (installed from the `bin/vaer` wrapper).
+- The project uses the Met.no APIs; please respect their usage policy.
