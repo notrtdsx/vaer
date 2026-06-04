@@ -1,3 +1,5 @@
+## This project has been moved to https://gitlab.com/notrtdsx/vaer
+
 # vaer
 
 simple, text-only weather in Node.js. inspired by [Lyn](https://git.sr.ht/~timharek/lyn).
